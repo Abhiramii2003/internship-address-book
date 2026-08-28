@@ -92,6 +92,11 @@ The backend explicitly translates this:
 - `GET /api/tags` - Fetch active categories.
 - `POST /api/tags` - Create a new category.
 - `DELETE /api/tags/:id` - Soft-delete a category.
+- `POST /api/agent/scan` - Scan for duplicate contacts and create proposals.
+- `GET /api/agent/proposals` - Fetch all active merge proposals waiting for approval.
+- `GET /api/agent/proposals/:id` - Fetch a specific merge proposal.
+- `POST /api/agent/proposals/:id/approve` - Approve a merge proposal (updates primary and soft-deletes duplicate).
+- `POST /api/agent/proposals/:id/reject` - Reject a merge proposal safely.
 
 ## 12. Validation Behavior
 - `express-validator` strictly enforces requirements before database execution.
@@ -160,3 +165,13 @@ These operations are **not bugs**. They are explicit security enforcement events
 
 ## 24. Production/Internship Readiness
 The application is fully ready for internship submission. The backend successfully normalizes the flat UI structures, seamlessly handles database constraints, and elegantly traps the intentional DBA privilege limitations to maintain UI stability.
+
+## 25. Address Book Agent (Human-in-the-Loop)
+The application includes an integrated **Address Book Agent** designed to safely clean up duplicate contacts through a strict Human-in-the-Loop workflow.
+
+### Agent Workflow
+- **Detect & Analyze**: The backend proactively scans all active contacts, comparing emails, phones, names, and organizations to calculate a confidence score.
+- **Propose**: High-confidence matches generate a "Merge Proposal", identifying the primary contact and backfilling missing fields from the duplicate.
+- **Wait for Approval**: Crucially, the agent **STOPS** and parks the proposal in a `WAITING_FOR_APPROVAL` state inside an in-memory queue. No database modifications occur automatically.
+- **Human Review**: Through the `/agent` dashboard, a user reviews the side-by-side comparison and the Agent's specific reasons for flagging the duplicate.
+- **Execute Merge**: Only upon explicit human approval does the backend execute an atomic transaction to update the primary contact and soft-delete the duplicate, strictly respecting all `temp_rw` database permissions.
