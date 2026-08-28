@@ -1,15 +1,26 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
-import ContactForm from '../components/ContactForm';
+import { useNavigate, useParams, Link } from 'react-router-dom';
 import { contactService } from '../services/api';
+import ContactForm from '../components/ContactForm';
 
 const EditContactPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  
   const [initialData, setInitialData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
+
+  const getFriendlyErrorMessage = (err) => {
+    if (!err.response) return 'Unable to connect to the server. Please check your internet connection.';
+    const status = err.response.status;
+    if (status === 403) return 'This operation requires elevated database permissions that are currently unavailable.';
+    if (status === 404) return 'Contact not found.';
+    if (status === 409) return 'A contact with this email or phone number already exists.';
+    if (status >= 500) return 'Something went wrong on our end. Please try again later.';
+    return err.response.data?.error || 'An unexpected error occurred.';
+  };
 
   useEffect(() => {
     const fetchContact = async () => {
@@ -17,40 +28,71 @@ const EditContactPage = () => {
         const response = await contactService.getContact(id);
         setInitialData(response.data);
       } catch (err) {
-        setError('Failed to load contact details.');
+        setError(getFriendlyErrorMessage(err));
       } finally {
         setLoading(false);
       }
     };
+    
     fetchContact();
   }, [id]);
 
-  const handleSubmit = async (formData) => {
+  const handleSubmit = async (data) => {
     setIsSubmitting(true);
     setError('');
+    
     try {
-      await contactService.updateContact(id, formData);
+      await contactService.updateContact(id, data);
       navigate('/');
     } catch (err) {
-      const msg = err.response?.data?.error || err.response?.data?.errors?.[0]?.msg || 'Failed to update contact';
-      setError(msg);
+      setError(getFriendlyErrorMessage(err));
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  if (loading) return <div className="loading">Loading...</div>;
-
   return (
-    <div>
-      <h1 style={{ marginBottom: '1.5rem' }}>Edit Contact</h1>
-      {error && <div className="alert alert-error">{error}</div>}
-      {initialData && (
+    <div style={{ maxWidth: '800px', margin: '0 auto' }}>
+      <Link to="/" className="back-link">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <line x1="19" y1="12" x2="5" y2="12"></line>
+          <polyline points="12 19 5 12 12 5"></polyline>
+        </svg>
+        Back to Contacts
+      </Link>
+      
+      <div className="page-header" style={{ marginBottom: '1.5rem' }}>
+        <div className="page-title">
+          <h1>Edit Contact</h1>
+          <p className="page-subtitle">Update the information below.</p>
+        </div>
+      </div>
+
+      {error && (
+        <div className="alert alert-error">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="8" x2="12" y2="12"></line>
+            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+          </svg>
+          {error}
+        </div>
+      )}
+
+      {loading ? (
+        <div className="loading-state">
+          <div className="spinner"></div>
+          Loading contact details...
+        </div>
+      ) : initialData ? (
         <ContactForm 
           initialData={initialData} 
           onSubmit={handleSubmit} 
           isSubmitting={isSubmitting} 
         />
+      ) : (
+        !error && <div className="empty-state">Contact not found.</div>
       )}
     </div>
   );

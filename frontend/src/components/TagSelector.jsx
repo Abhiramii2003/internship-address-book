@@ -49,28 +49,25 @@ const TagSelector = ({ selectedTagIds, onChange }) => {
   };
 
   return (
-    <div className="tag-selector mt-1">
-      <label className="form-label">Tags</label>
-      <div className="contact-tags" style={{ marginBottom: '1rem' }}>
+    <div className="tag-selector">
+      <div className="contact-tags" style={{ marginBottom: '1.25rem' }}>
         {availableTags.map(tag => {
           const isSelected = selectedTagIds.includes(tag.id);
           return (
             <span 
               key={tag.id} 
-              className="tag"
-              style={{ 
-                cursor: 'pointer', 
-                backgroundColor: isSelected ? '#0288d1' : '#e1f5fe',
-                color: isSelected ? '#ffffff' : '#0288d1',
-                border: '1px solid #0288d1'
-              }}
+              className={`tag selectable ${isSelected ? 'selected' : ''}`}
               onClick={() => handleToggleTag(tag.id)}
             >
-              {tag.name} {isSelected && '✓'}
+              {tag.name} {isSelected && (
+                <svg style={{display: 'inline', marginLeft: '0.25rem', verticalAlign: 'text-bottom'}} xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+              )}
             </span>
           );
         })}
-        {availableTags.length === 0 && <span className="contact-detail">No tags available. Create one below.</span>}
+        {availableTags.length === 0 && <span style={{fontSize: '0.875rem', color: 'var(--color-text-muted)'}}>No tags available. Create one below.</span>}
       </div>
 
       <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
@@ -88,10 +85,15 @@ const TagSelector = ({ selectedTagIds, onChange }) => {
           disabled={loading || !newTagName.trim()}
           type="button"
         >
-          {loading ? 'Creating...' : 'Add Tag'}
+          {loading ? (
+            <>
+              <div className="spinner" style={{width: '12px', height: '12px', borderWidth: '2px', marginRight: '4px'}}></div>
+              Adding...
+            </>
+          ) : 'Add Tag'}
         </button>
       </div>
-      {error && <div className="form-error">{error}</div>}
+      {error && <div className="form-error" style={{marginTop: '0.5rem'}}>{error}</div>}
     </div>
   );
 };

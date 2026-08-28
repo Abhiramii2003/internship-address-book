@@ -16,6 +16,8 @@ app.use(express.urlencoded({ extended: true }));
 // Routes
 app.use('/api/contacts', contactRoutes);
 app.use('/api/tags', tagRoutes);
+const agentRoutes = require('./routes/agentRoutes');
+app.use('/api/agent', agentRoutes);
 
 // 404 handler
 app.use((req, res, next) => {

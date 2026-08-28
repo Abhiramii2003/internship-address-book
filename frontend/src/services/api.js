@@ -25,4 +25,12 @@ export const tagService = {
   createTag: (name) => api.post('/tags', { name }),
 };
 
+export const agentService = {
+  scan: () => api.post('/agent/scan'),
+  getProposals: () => api.get('/agent/proposals'),
+  getProposal: (id) => api.get(`/agent/proposals/${id}`),
+  approveProposal: (id) => api.post(`/agent/proposals/${id}/approve`),
+  rejectProposal: (id) => api.post(`/agent/proposals/${id}/reject`),
+};
+
 export default api;
