@@ -25,6 +25,9 @@ exports.createTag = async (req, res, next) => {
     if (error.code === 'ER_DUP_ENTRY') {
       return res.status(409).json({ error: 'Tag already exists' });
     }
+    if (error.code === 'ER_TABLEACCESS_DENIED_ERROR') {
+      return res.status(403).json({ error: 'This operation requires elevated database permissions that are currently unavailable.' });
+    }
     next(error);
   }
 };
@@ -37,6 +40,9 @@ exports.deleteTag = async (req, res, next) => {
     }
     res.status(204).send();
   } catch (error) {
+    if (error.code === 'ER_TABLEACCESS_DENIED_ERROR') {
+      return res.status(403).json({ error: 'This operation requires elevated database permissions that are currently unavailable.' });
+    }
     next(error);
   }
 };

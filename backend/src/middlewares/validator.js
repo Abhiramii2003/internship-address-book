@@ -10,23 +10,53 @@ const isFlexiblePhone = (value) => {
   return true;
 };
 
-const validateContact = [
+const commonContactValidations = [
+  body('email').optional({ values: 'null' }).custom((value) => {
+    if (value === '' || value === null) return true;
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(value)) throw new Error('Must be a valid email address');
+    return true;
+  }),
+  body('phone').optional({ values: 'null' }).custom((value) => {
+    if (value === '' || value === null) return true;
+    return isFlexiblePhone(value);
+  }),
+  body('tagIds')
+    .optional()
+    .isArray().withMessage('tagIds must be an array')
+    .custom((value) => {
+      if (value && value.length > 0) {
+        for (const tagId of value) {
+          if (!Number.isInteger(tagId) || tagId <= 0) {
+            throw new Error('Each tagId must be a positive integer');
+          }
+        }
+      }
+      return true;
+    })
+];
+
+const validateCreateContact = [
   body('first_name').trim().notEmpty().withMessage('First name is required'),
-  
-  // Custom validation to ensure at least email or phone is provided
   body().custom((value, { req }) => {
     if (!req.body.email && !req.body.phone) {
       throw new Error('At least one of email or phone is required');
     }
     return true;
   }),
+  ...commonContactValidations,
+  (req, res, next) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+    next();
+  }
+];
 
-  // Email validation if provided
-  body('email').optional({ checkFalsy: true }).isEmail().withMessage('Must be a valid email address'),
-
-  // Phone validation if provided
-  body('phone').optional({ checkFalsy: true }).custom(isFlexiblePhone),
-
+const validateUpdateContact = [
+  body('first_name').optional().trim().notEmpty().withMessage('First name cannot be empty'),
+  ...commonContactValidations,
   (req, res, next) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -37,7 +67,7 @@ const validateContact = [
 ];
 
 const validateTag = [
-  body('name').trim().notEmpty().withMessage('Tag name is required'),
+  body('name').trim().notEmpty().withMessage('Category name is required'),
   (req, res, next) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -48,6 +78,7 @@ const validateTag = [
 ];
 
 module.exports = {
-  validateContact,
+  validateCreateContact,
+  validateUpdateContact,
   validateTag
 };
